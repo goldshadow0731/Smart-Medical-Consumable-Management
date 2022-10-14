@@ -7,7 +7,7 @@ from flask_restx import Api, Namespace, Resource, fields
 from flask_session import Session
 from flask_login import UserMixin, login_user, LoginManager, logout_user
 from pymongo import MongoClient
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import  check_password_hash
 
 
 # Load ENV
@@ -88,10 +88,9 @@ class Login(Resource):
     def post(self):
         data = api.payload
         account = data.get('account', '')
-        password = generate_password_hash(data.get('password'))
         user_data = user_information.find_one({"account": account})
 
-        if (user_data is not None) and (check_password_hash(password, data.get('password'))):
+        if (user_data is not None) and (check_password_hash(user_data.get('password'), data.get('password'))):
             user = User()
             user.id = user_data['_id']
             login_user(user)
@@ -108,7 +107,8 @@ class Login(Resource):
 class Logout(Resource):
     def post(self):
         logout_user()
-        return 'Logged out'
+        return {
+            "message": "Logged out"}
 
 
 @api_ns.route('/inventory')
@@ -147,7 +147,8 @@ class Insert_Data(Resource):
             })
             return "Success"
         except Exception as e:
-            return "Fail"+e
+            print(e)
+            return "Fail"
 
 
 if __name__ == "__main__":
