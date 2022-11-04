@@ -1,0 +1,7 @@
+dnspython==2.2.1
+opencv-python==4.6.0.66
+numpy==1.23.0
+paho-mqtt==1.6.1
+pillow==9.2.0
+pymongo==4.2.0
+python-dotenv==0.21.0
