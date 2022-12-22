@@ -1,4 +1,5 @@
 from typing import Text, List, Dict
+import zlib
 
 import cv2
 import numpy as np
@@ -8,19 +9,25 @@ class GenerateEPaperImage():
     line_width: int = 10
     text_max_length: int = 16
     color_depth: int = 2  # bit
-    color: dict = {
+    color: Dict = {
         'white': 0b11,
         'red': 0b01,
         'black': 0b00
     }
+    image = None
+    img_data = None
+    byte_data = None
+    crypto_data = None
 
-    def __init__(self, width: int = 640, height: int = 384):
+    def __init__(self, width: int = 640, height: int = 384, color: Dict = None):
         self.width = width
         self.height = height
+        if color:
+            self.color = color
+            self.color_depth = len(bin(max(color.values()))) - 2
 
-    # Notice
     @classmethod
-    def convert_color(cls, color_value: List[int], threshold: int = 128) -> int:
+    def _convert_color(cls, color_value: List[int], threshold: int = 128) -> int:
         if color_value[0] > threshold and color_value[1] > threshold and color_value[2] > threshold:
             return cls.color['white']
         elif color_value[2] > threshold:
@@ -29,7 +36,7 @@ class GenerateEPaperImage():
             return cls.color['black']
 
     @classmethod
-    def split_text(cls, raw_text: Text) -> List[Text]:
+    def _split_text(cls, raw_text: Text) -> List[Text]:
         text_list = [""]
         for word in raw_text.split("_"):
             word += " "
@@ -39,7 +46,7 @@ class GenerateEPaperImage():
                 text_list[-1] += word
         return [word.strip() for word in text_list]
 
-    def gen_image(self, data: Dict) -> np.ndarray:
+    def gen_image(self, data: Dict):
         cabinet_width = self.width // len(data["position"])
         cabinet_height = self.height // max([len(i) for i in data["position"]])
 
@@ -54,7 +61,7 @@ class GenerateEPaperImage():
                               (0, 0, 0), self.line_width)
 
                 # Write text
-                text_list = self.split_text(col_data)
+                text_list = self._split_text(col_data)
                 text_list.reverse()
                 for index, word in enumerate(text_list):
                     cv2.putText(
@@ -85,30 +92,28 @@ class GenerateEPaperImage():
             img = np.zeros((height_mod, self.width, 3), np.uint8)
             img.fill(0)
             cabinet.append(img)
-        cabinet_img = cv2.vconcat(cabinet)
+        self.image = cv2.vconcat(cabinet)
 
-        return cabinet_img
+        self.convert_image_to_data()
+        return self
 
-    @classmethod
-    def convert_image_to_data(cls, image: np.ndarray) -> np.ndarray:
-        step = 8 // cls.color_depth
-        image_length = image.shape[0] * image.shape[1] // step
+    def convert_image_to_data(self):
+        step = 8 // self.color_depth
+        image_length = self.image.shape[0] * self.image.shape[1] // step
 
-        img_data = np.zeros((image_length, ), dtype=np.uint8)
-        for i in range(image.shape[0]):
-            for j in range(0, image.shape[1], step):
+        self.img_data = np.zeros((image_length, ), dtype=np.uint8)
+        for i in range(self.image.shape[0]):
+            for j in range(0, self.image.shape[1], step):
                 val = 0
                 for k in range(step):
-                    val |= cls.convert_color(image[i][j+k])
-                    val <<= cls.color_depth
-                val >>= cls.color_depth
-                img_data[(i*image.shape[1]+j)//step] = val
+                    val |= self._convert_color(self.image[i][j+k])
+                    val <<= self.color_depth
+                val >>= self.color_depth
+                self.img_data[(i*self.image.shape[1]+j)//step] = val
 
-        return img_data
-
-    @staticmethod
-    def convert_data_to_unicode(data: np.ndarray) -> List[Text]:
-        return [chr(val) for val in data]
+        self.byte_data = self.img_data.tobytes()
+        self.crypto_data = zlib.compress(self.byte_data, 9)
+        return self
 
     @staticmethod
     def save_to_cpp_file(image):
@@ -120,7 +125,6 @@ class GenerateEPaperImage():
             data_list.append(f"0X{val}")
         with open("image.h", "w") as fp:
             fp.write('extern const unsigned char MY_IMAGE[];\n')
-        # const unsigned char MY_IMAGE[61440] PROGMEM =
         with open("image.cpp", "w") as fp:
             fp.write('#include "image.h"\n\n')
             fp.write('const unsigned char MY_IMAGE[61440] PROGMEM = {\n')

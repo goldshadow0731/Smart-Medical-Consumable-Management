@@ -7,7 +7,7 @@ from flask_restx import Api, Namespace, Resource, fields
 from flask_session import Session
 from flask_login import UserMixin, login_user, LoginManager, logout_user
 from pymongo import MongoClient
-from werkzeug.security import  check_password_hash
+from werkzeug.security import check_password_hash
 
 
 # Load ENV
@@ -139,10 +139,10 @@ class Insert_Data(Resource):
                     "gauze": {"Row": 2, "Column": 1},
                     "ear thermometer": {"Row": 2, "Column": 2}},
                 "num": {
-                   "cotton swab": 283,
-                   "normal saline": 35,
-                   "gauze": 72,
-                   "ear thermometer": 39
+                    "cotton swab": 283,
+                    "normal saline": 35,
+                    "gauze": 72,
+                    "ear thermometer": 39
                 }
             })
             return "Success"

@@ -1,0 +1,6 @@
+{
+    "sketch": "m5stack.ino",
+    "configuration": "PartitionScheme=default,UploadSpeed=1500000,DebugLevel=none,EraseFlash=none",
+    "board": "m5stack:esp32:m5stack-atom",
+    "port": "COM23"
+}

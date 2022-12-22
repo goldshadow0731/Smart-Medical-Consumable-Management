@@ -3,32 +3,6 @@
 #include "epdif.h"
 
 
-int CharToInt(char* number) {
-  int num = 0;
-  for (int i=0; i<strlen(number); i++) {
-    num = num * 10 + (int)(number[i] - '0');
-  }
-  return num;
-};
-
-int ConstCharToInt(const char* number) {
-  int num = 0;
-  for (int i=0; i<strlen(number); i++) {
-    num = num * 10 + (int)(number[i] - '0');
-  }
-  return num;
-};
-
-int GetTopicNumber(char* topic, char* sep) {
-  char* ss = strtok(topic, sep);
-  ss = strtok(NULL, sep);
-  int num = 0;
-  for (int i=0; i<sizeof(ss)/sizeof(char); i++) {
-    num = num * 10 + (int)(ss[i] - '0');
-  }
-  return num;
-};
-
 void DisplayFrame(unsigned char* image_data) {
   unsigned char temp1, temp2;
   epd.SendCommand(DATA_START_TRANSMISSION_1);
